@@ -17,6 +17,16 @@ server.express.use((req, resp, next) => {
   next();
 });
 
+server.express.use(async (req, resp, next) => {
+  if (!req.userId) return next();
+  req.user = await db.query.user({
+    where: { id: req.userId }},
+    '{id permissions email name}'
+  );
+
+  next();
+});
+
 server.start({
   cors: {
     credentials: true,
