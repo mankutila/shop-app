@@ -26,8 +26,6 @@ const Mutation = {
       info
     );
 
-    console.log(item);
-
     return item;
   },
 
@@ -126,7 +124,6 @@ const Mutation = {
       subject: 'Password reset',
       html: makeANiceEmail(`Your password reset link is here! \n\n <a href="${process.env.FRONTEND_URL}/reset?resetToken=${resetToken}">Reset link</a>`)
     });
-    console.log(mailResp);
 
     return { message: 'Thanks!' };
   },
@@ -168,6 +165,7 @@ const Mutation = {
 
     return updatedUser;
   },
+
   async updatePermissions(parent, args, ctx, info) {
     if (!ctx.request.userId) {
       throw new Error('You must be logged in');
@@ -185,6 +183,65 @@ const Mutation = {
         },
       },
     }, info);
+  },
+
+  async addToCart(parent, args, ctx, info) {
+    if (!ctx.request.userId) {
+      throw new Error('You must be logged in to do that');
+    }
+
+    const { userId } = ctx.request;
+
+    const [existingCartItem] = await ctx.db.query.cartItems({
+      where: {
+        user: { id: userId },
+        item: { id: args.id },
+      }
+    });
+
+    if (existingCartItem) {
+      return ctx.db.mutation.updateCartItem({
+        where: { id: existingCartItem.id },
+        data: { quantity: existingCartItem.quantity + 1 },
+      }, info)
+    }
+
+    return ctx.db.mutation.createCartItem({
+      data: {
+        quantity: 1,
+        item: {
+          connect: {
+            id: args.id
+          }
+        },
+        user: {
+          connect: {
+            id: userId
+          }
+        },
+      },
+    }, info)
+  },
+
+  async removeFromCart(parent, args, ctx, info) {
+    const cartItem = await ctx.db.query.cartItem({
+      where: { id: args.id },
+    }, `{ id, user { id } }`);
+
+    if (!cartItem) {
+      throw new Error('There is no such item in cart');
+    }
+
+    const ownsItem = cartItem.user.id === ctx.request.userId;
+
+    if (!ownsItem) {
+      throw new Error('You are not able to do this');
+    }
+
+    return ctx.db.mutation.deleteCartItem({
+      where: { id: args.id },
+    }, info)
+
   }
 };
 
