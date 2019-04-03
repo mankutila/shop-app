@@ -5,7 +5,11 @@ The application has following functions:
 - sign up and sign in;
 - adding, editing and deleting items from shop;
 - search items;
-- permissions management for admin;
+- permissions management - allowed for admin;
+
+Permissions management interface:
+![Permissions management](http://prntscr.com/n74a3u)
+
 - shopping cart with credit card checkout (payments are processed by Stripe).
 
 Application uses:
